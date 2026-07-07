@@ -466,10 +466,11 @@
 <script>
 (function(){
   const root = document.getElementById('cf-root');
+  const APP_VERSION = 1;
 
   // ==== CONFIGURAÇÃO DO SUPABASE — troque pelos valores do seu projeto ====
-  const SUPABASE_URL = 'https://SEU-PROJETO.supabase.co';
-  const SUPABASE_ANON_KEY = 'SUA_CHAVE_ANON_PUBLICA';
+  const SUPABASE_URL = 'https://edbcgkdtbizupuhiveba.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkYmNna2R0Yml6dXB1aGl2ZWJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0MzM1MjAsImV4cCI6MjA5OTAwOTUyMH0.eI8-N9UMIADlf4KgT-zEnuo0HsLjyzZaY6fgeTFjUx0';
   // ==========================================================================
 
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -937,6 +938,7 @@
               <circle cx="50" cy="18" r="5" fill="white"/>
             </svg>
             Minhas Contas
+            <span style="font-size:11px;font-weight:600;color:var(--ink-soft);background:var(--bg);border-radius:8px;padding:2px 7px;">v${APP_VERSION}</span>
           </div>
           <button id="cf-logout" style="background:none;border:none;font-size:12px;color:var(--ink-soft);font-weight:600;cursor:pointer;">Sair</button>
         </div>
@@ -1084,11 +1086,19 @@
     return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
+  function getClosingBalanceBeforeMonth(month){
+    const balances = computeRunningBalances();
+    const before = items
+      .filter(it => it.vencimento && it.vencimento.slice(0,7) < month)
+      .sort(compareByEffectiveDate);
+    return before.length ? balances[before[before.length-1].id] : 0;
+  }
+
   function openSheet(id){
     editingId = id;
     const it = id ? items.find(i=>i.id===id) : {
       id:null, item:'', tipo:'saida', conta:lastConta, parcela:'',
-      vencimento: currentMonth+'-05', valor:'', dataPagto:'', order: Date.now()
+      vencimento: todayISO(), valor:'', dataPagto:'', order: Date.now()
     };
 
     const backdrop = document.createElement('div');
@@ -1166,7 +1176,23 @@
       btn.onclick = ()=>{
         backdrop.querySelectorAll('#cf-tipo button').forEach(b=>b.classList.remove('active'));
         btn.classList.add('active');
-        backdrop.querySelector('#cf-pagto-wrap').style.display = btn.dataset.v==='saldo' ? 'none' : '';
+        const tipo = btn.dataset.v;
+        backdrop.querySelector('#cf-pagto-wrap').style.display = tipo==='saldo' ? 'none' : '';
+        if(!id){
+          const itemInput = backdrop.querySelector('#cf-item');
+          const vencInput = backdrop.querySelector('#cf-vencimento');
+          const pagtoInput = backdrop.querySelector('#cf-pagto');
+          const valorInput = backdrop.querySelector('#cf-valor');
+          if(tipo === 'saldo'){
+            itemInput.value = 'Saldo';
+            vencInput.value = currentMonth+'-01';
+            pagtoInput.value = currentMonth+'-01';
+            valorInput.value = getClosingBalanceBeforeMonth(currentMonth).toFixed(2);
+          } else {
+            vencInput.value = todayISO();
+            if(itemInput.value === 'Saldo') itemInput.value = '';
+          }
+        }
       };
     });
 
