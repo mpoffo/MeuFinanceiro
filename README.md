@@ -51,15 +51,10 @@ create policy "Users can update own data"
    simples para uso pessoal. Deixando ativado, você recebe um e-mail de
    confirmação no cadastro.
 
-## Passo 3 — Pegar a URL e a chave do projeto
-1. Vá em **Project Settings → API**.
-2. Copie o **Project URL** e a chave **anon public**.
-3. Abra o arquivo `index.html` desta pasta e substitua no topo do `<script>`:
-
-```js
-const SUPABASE_URL = 'https://SEU-PROJETO.supabase.co';
-const SUPABASE_ANON_KEY = 'SUA_CHAVE_ANON_PUBLICA';
-```
+## Passo 3 — Credenciais do Supabase
+Já estão preenchidas neste `index.html` (URL e chave anon do seu projeto
+`edbcgkdtbizupuhiveba`). Não precisa mexer em nada aqui, a menos que troque
+de projeto no Supabase.
 
 ## Passo 4 — Subir pro GitHub Pages
 1. Crie um repositório novo no GitHub (pode ser privado ou público — o conteúdo
