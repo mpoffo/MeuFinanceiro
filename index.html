@@ -192,6 +192,11 @@
     padding:40px 20px;
     font-size:14px;
   }
+  .cf-empty-day{
+    color:var(--ink-soft);
+    font-size:12.5px;
+    padding:2px 4px 6px;
+  }
   .cf-card{
     background:var(--surface);
     border:1px solid var(--line);
@@ -466,7 +471,7 @@
 <script>
 (function(){
   const root = document.getElementById('cf-root');
-  const APP_VERSION = 1;
+  const APP_VERSION = 2;
 
   // ==== CONFIGURAÇÃO DO SUPABASE — troque pelos valores do seu projeto ====
   const SUPABASE_URL = 'https://edbcgkdtbizupuhiveba.supabase.co';
@@ -635,6 +640,7 @@
   function formatGroupDate(iso){
     const [y,m,d] = iso.split('-').map(Number);
     const dt = new Date(y, m-1, d);
+    if(iso === todayISO()) return 'Hoje, ' + String(d).padStart(2,'0') + '/' + String(m).padStart(2,'0');
     let weekday = dt.toLocaleDateString('pt-BR', {weekday:'short'}).replace('.','');
     weekday = weekday.charAt(0).toUpperCase() + weekday.slice(1);
     return weekday + ', ' + String(d).padStart(2,'0') + '/' + String(m).padStart(2,'0');
@@ -918,13 +924,26 @@
     const hasNegative = warningDate !== null;
 
     const displayGroups = buildDateGroups(displayedItems);
+
+    const today = todayISO();
+    if(currentMonth === today.slice(0,7) && !monthGroups.some(g => g.date === today)){
+      const beforeToday = items
+        .filter(it => effectiveDate(it) <= today)
+        .sort(compareByEffectiveDate);
+      const todayBalance = beforeToday.length ? balances[beforeToday[beforeToday.length-1].id] : 0;
+      dateBalanceMap[today] = todayBalance;
+      let insertAt = displayGroups.findIndex(g => g.date > today);
+      if(insertAt === -1) insertAt = displayGroups.length;
+      displayGroups.splice(insertAt, 0, {date: today, items: [], isToday: true});
+    }
+
     const listHTML = displayGroups.length
       ? displayGroups.map(g => `
           <div class="cf-group-header">
             <span class="cf-group-date">${formatGroupDate(g.date)}</span>
             <span class="cf-group-balance ${dateBalanceMap[g.date] < 0 ? 'negative' : ''}">${fmtBRL(dateBalanceMap[g.date])}</span>
           </div>
-          ${g.items.map(cardHTML).join('')}
+          ${g.items.length ? g.items.map(cardHTML).join('') : (g.isToday ? '<div class="cf-empty-day">Nenhum lançamento hoje</div>' : '')}
         `).join('')
       : `<div class="cf-empty">${monthItems.length ? 'Nenhum lançamento com esse filtro.' : 'Nada lançado neste mês ainda.<br>Toque em + para adicionar.'}</div>`;
 
