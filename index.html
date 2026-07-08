@@ -471,7 +471,7 @@
 <script>
 (function(){
   const root = document.getElementById('cf-root');
-  const APP_VERSION = 2;
+  const APP_VERSION = 3;
 
   // ==== CONFIGURAÇÃO DO SUPABASE — troque pelos valores do seu projeto ====
   const SUPABASE_URL = 'https://edbcgkdtbizupuhiveba.supabase.co';
@@ -936,6 +936,8 @@
       if(insertAt === -1) insertAt = displayGroups.length;
       displayGroups.splice(insertAt, 0, {date: today, items: [], isToday: true});
     }
+
+    displayGroups.reverse();
 
     const listHTML = displayGroups.length
       ? displayGroups.map(g => `
