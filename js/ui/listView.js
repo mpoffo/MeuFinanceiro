@@ -20,6 +20,7 @@ const FILTERS = [
 ];
 
 export function render(handlers){
+  root.classList.remove('wide');
   if(!state.loaded){
     root.innerHTML = '<div style="padding:40px;text-align:center;color:var(--ink-soft);">Carregando...</div>';
     return;
@@ -116,7 +117,10 @@ export function render(handlers){
           Minhas Contas
           <span style="font-size:11px;font-weight:600;color:var(--ink-soft);background:var(--bg);border-radius:8px;padding:2px 7px;">v${APP_VERSION}</span>
         </div>
-        <button id="cf-logout" style="background:none;border:none;font-size:12px;color:var(--ink-soft);font-weight:600;cursor:pointer;">Sair</button>
+        <div style="display:flex;gap:14px;align-items:center;">
+          <button id="cf-manage" style="background:none;border:none;font-size:12px;color:var(--ink-soft);font-weight:600;cursor:pointer;">Gerenciar</button>
+          <button id="cf-logout" style="background:none;border:none;font-size:12px;color:var(--ink-soft);font-weight:600;cursor:pointer;">Sair</button>
+        </div>
       </div>
       <div class="cf-header" style="padding-top:0;">
         <div class="cf-month-nav">
@@ -160,6 +164,7 @@ export function render(handlers){
   document.getElementById('cf-next').onclick = ()=>{ state.currentMonth = shiftMonth(state.currentMonth,1); saveAppData(); render(handlers); };
   document.getElementById('cf-month-input').onchange = (e)=>{ state.currentMonth = e.target.value; saveAppData(); render(handlers); };
   document.getElementById('cf-fab').onclick = ()=> handlers.onAdd();
+  document.getElementById('cf-manage').onclick = ()=> handlers.onManage();
   document.getElementById('cf-logout').onclick = ()=> handlers.onLogout();
   root.querySelectorAll('.cf-filter-chip').forEach(chip=>{
     chip.onclick = ()=>{ state.currentFilter = chip.dataset.f; render(handlers); };

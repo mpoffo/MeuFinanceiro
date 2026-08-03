@@ -4,12 +4,22 @@ import { loadAppData } from './api/storage.js';
 import { render } from './ui/listView.js';
 import { renderAuth } from './ui/authView.js';
 import { openSheet } from './ui/sheetView.js';
+import { renderManage } from './ui/manageView.js';
 
 function refresh(){
   render({
     onAdd: () => openSheet(null, { onChange: refresh }),
     onEditItem: (id) => openSheet(id, { onChange: refresh }),
-    onLogout: handleLogout
+    onLogout: handleLogout,
+    onManage: showManage
+  });
+}
+
+function showManage(){
+  renderManage({
+    onBack: refresh,
+    onAdd: () => openSheet(null, { onChange: showManage }),
+    onEditItem: (id) => openSheet(id, { onChange: showManage })
   });
 }
 

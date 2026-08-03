@@ -13,6 +13,10 @@ export function situacaoLabel(s){
   return {pago:'Pago', agendado:'Agendado', pendente:'Pendente', vencido:'Vencido', saldo:'Saldo'}[s] || s;
 }
 
+export function tipoLabel(t){
+  return {entrada:'Entrada', saida:'Saída', saldo:'Saldo'}[t] || t;
+}
+
 export function effectiveDate(it){
   return it.dataPagto || it.vencimento;
 }
@@ -85,4 +89,28 @@ export function getClosingBalanceBeforeMonth(items, month){
     .filter(it => it.vencimento && it.vencimento.slice(0,7) < month)
     .sort(compareByEffectiveDate);
   return before.length ? balances[before[before.length-1].id] : 0;
+}
+
+export function bulkMarkPaid(items, ids, date){
+  items.forEach(it=>{ if(ids.has(it.id) && it.tipo !== 'saldo') it.dataPagto = date; });
+}
+
+export function bulkSchedule(items, ids){
+  items.forEach(it=>{ if(ids.has(it.id) && it.tipo !== 'saldo') it.dataPagto = it.vencimento; });
+}
+
+export function bulkClearPayment(items, ids){
+  items.forEach(it=>{ if(ids.has(it.id) && it.tipo !== 'saldo') it.dataPagto = ''; });
+}
+
+export function bulkSetConta(items, ids, conta){
+  items.forEach(it=>{ if(ids.has(it.id)) it.conta = conta; });
+}
+
+export function bulkSetValor(items, ids, valor){
+  items.forEach(it=>{ if(ids.has(it.id)) it.valor = valor; });
+}
+
+export function bulkDelete(items, ids){
+  return items.filter(it => !ids.has(it.id));
 }

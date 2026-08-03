@@ -55,10 +55,19 @@ export function openSheet(id, { onChange }){
       </div>
 
       <div class="cf-field" id="cf-pagto-wrap" style="${it.tipo==='saldo'?'display:none':''}">
-        <label>Data de pagamento (deixe em branco se ainda não pagou)</label>
-        <input type="date" id="cf-pagto" value="${it.dataPagto||''}">
-        <button class="cf-quickpay" id="cf-quickpay">Marcar como pago hoje</button>
+        <label>Data de pagamento</label>
+        <div class="cf-pagto-row">
+          <input type="date" id="cf-pagto" value="${it.dataPagto||''}">
+          <button class="cf-chip pago" id="cf-quickpay">Pago hoje</button>
+          <button class="cf-chip agendado" id="cf-agendar">Agendar</button>
+        </div>
       </div>
+
+      ${!id ? `
+      <div class="cf-field" id="cf-parcelas-wrap" style="${it.tipo==='saldo'?'display:none':''}">
+        <label>Repetir em quantas parcelas mensais? (1 = não parcelado)</label>
+        <input type="number" min="1" step="1" id="cf-parcelas-count" value="1">
+      </div>` : ''}
 
       <div class="cf-sheet-actions">
         <button class="cf-btn ghost" id="cf-cancel">Cancelar</button>
@@ -93,6 +102,7 @@ export function openSheet(id, { onChange }){
         const vencInput = backdrop.querySelector('#cf-vencimento');
         const pagtoInput = backdrop.querySelector('#cf-pagto');
         const valorInput = backdrop.querySelector('#cf-valor');
+        backdrop.querySelector('#cf-parcelas-wrap').style.display = tipo==='saldo' ? 'none' : '';
         if(tipo === 'saldo'){
           itemInput.value = 'Saldo';
           vencInput.value = state.currentMonth+'-01';
@@ -108,6 +118,10 @@ export function openSheet(id, { onChange }){
 
   backdrop.querySelector('#cf-quickpay').onclick = ()=>{
     backdrop.querySelector('#cf-pagto').value = todayISO();
+  };
+
+  backdrop.querySelector('#cf-agendar').onclick = ()=>{
+    backdrop.querySelector('#cf-pagto').value = backdrop.querySelector('#cf-vencimento').value;
   };
 
   backdrop.querySelector('#cf-cancel').onclick = ()=> backdrop.remove();
@@ -126,17 +140,25 @@ export function openSheet(id, { onChange }){
     const parcela = backdrop.querySelector('#cf-parcela').value.trim();
     const dataPagto = tipo==='saldo' ? '' : backdrop.querySelector('#cf-pagto').value;
 
+    let parcelasCriadas = 0;
     if(id){
       const existing = state.items.find(i=>i.id===id);
       Object.assign(existing, {item:itemName, tipo, conta, parcela, vencimento, valor, dataPagto});
     }else{
-      state.items.push({id: uid(), item:itemName, tipo, conta, parcela, vencimento, valor, dataPagto, order:Date.now()});
+      const newId = uid();
+      state.items.push({id: newId, item:itemName, tipo, conta, parcela, vencimento, valor, dataPagto, order:Date.now()});
+      const parcelasInput = backdrop.querySelector('#cf-parcelas-count');
+      const parcelasCount = parcelasInput && tipo !== 'saldo' ? parseInt(parcelasInput.value, 10) || 1 : 1;
+      if(parcelasCount > 1){
+        parcelar(state.items, newId, parcelasCount - 1);
+        parcelasCriadas = parcelasCount;
+      }
     }
     state.lastConta = conta || state.lastConta;
     saveAppData();
     backdrop.remove();
     onChange();
-    showToast('Salvo');
+    showToast(parcelasCriadas > 1 ? `Salvo em ${parcelasCriadas} parcelas` : 'Salvo');
   };
 
   if(id){
