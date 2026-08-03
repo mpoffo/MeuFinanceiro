@@ -76,11 +76,44 @@ de projeto no Supabase.
    e-mail/senha — os dados são os mesmos, guardados no Supabase.
 
 ## Se quiser atualizar o app depois
-Edite o `index.html` (ou peça pra mim gerar uma nova versão) e envie de novo
-pro mesmo repositório — o GitHub Pages atualiza sozinho.
+Edite os arquivos em `css/` e `js/` (ou peça pra mim gerar uma nova versão) e
+envie de novo pro mesmo repositório — o GitHub Pages atualiza sozinho. Não é
+preciso build: os módulos JS são carregados direto pelo navegador.
 
 ## Estrutura dos arquivos
 ```
-github-pages-project/
-└── index.html   → o app completo (interface + login + conexão com o Supabase)
+MeuFinanceiro/
+├── index.html            → apenas a casca HTML (carrega o CSS e o JS)
+├── css/
+│   └── styles.css        → todo o visual do app
+└── js/
+    ├── config.js         → constantes e credenciais do Supabase
+    ├── seed-data.js       → dados de exemplo usados no primeiro acesso
+    ├── utils.js           → formatação de datas/moeda, helpers puros
+    ├── domain.js          → regras de negócio (situação, saldo, parcelamento)
+    ├── state.js           → estado da aplicação em memória
+    ├── app.js             → ponto de entrada, liga UI + API
+    ├── api/
+    │   ├── client.js      → cliente do Supabase
+    │   ├── auth.js        → login/cadastro/logout
+    │   └── storage.js     → carregar/salvar os lançamentos
+    └── ui/
+        ├── dom.js         → referência ao elemento raiz
+        ├── toast.js       → mensagens rápidas na tela
+        ├── authView.js    → tela de login/cadastro
+        ├── sheetView.js   → formulário de novo/editar lançamento
+        └── listView.js    → lista principal, saldo, filtros e gestos
 ```
+
+### Testando localmente
+Como o app usa ES Modules (`import`/`export`), abrir o `index.html` direto no
+navegador (protocolo `file://`) não funciona em alguns navegadores por causa
+de restrições de CORS. Para testar antes de publicar, sirva a pasta com um
+servidor estático simples, por exemplo:
+```
+npx serve .
+# ou
+python -m http.server 8000
+```
+e acesse `http://localhost:8000` (ou a porta mostrada). No GitHub Pages
+(servido via `https://`) isso não é um problema.
