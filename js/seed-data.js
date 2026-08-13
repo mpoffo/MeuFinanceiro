@@ -1,4 +1,5 @@
 import { uid } from './utils.js';
+import { HISTORICO_DATA } from './historico-data.js';
 
 export const SEED_DATA = [
   {item:'Saldo', tipo:'saldo', conta:'Itaú', parcela:'', vencimento:'2026-07-01', valor:12760.0, dataPagto:'2026-07-01'},
@@ -124,5 +125,6 @@ export const SEED_DATA = [
 ];
 
 export function buildSeed(){
-  return SEED_DATA.map((it, idx) => ({...it, id: uid(), order: idx}));
+  const all = [...HISTORICO_DATA, ...SEED_DATA];
+  return all.map((it, idx) => ({...it, id: uid(), order: idx}));
 }

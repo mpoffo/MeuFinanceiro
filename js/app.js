@@ -5,13 +5,15 @@ import { render } from './ui/listView.js';
 import { renderAuth } from './ui/authView.js';
 import { openSheet } from './ui/sheetView.js';
 import { renderManage } from './ui/manageView.js';
+import { renderDashboard } from './ui/dashboardView.js';
 
 function refresh(){
   render({
     onAdd: () => openSheet(null, { onChange: refresh }),
     onEditItem: (id) => openSheet(id, { onChange: refresh }),
     onLogout: handleLogout,
-    onManage: showManage
+    onManage: showManage,
+    onDashboard: showDashboard
   });
 }
 
@@ -20,6 +22,12 @@ function showManage(){
     onBack: refresh,
     onAdd: () => openSheet(null, { onChange: showManage }),
     onEditItem: (id) => openSheet(id, { onChange: showManage })
+  });
+}
+
+function showDashboard(){
+  renderDashboard({
+    onBack: refresh
   });
 }
 

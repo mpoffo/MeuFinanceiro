@@ -83,6 +83,21 @@ export function duplicateExact(items, id){
   items.push({...orig, id: uid(), order:Date.now()});
 }
 
+export function monthSummaries(items, months){
+  return months.map(month=>{
+    const monthItems = items.filter(it => it.vencimento && it.vencimento.slice(0,7) === month);
+    let entradas = 0, saidas = 0;
+    monthItems.forEach(it=>{
+      if(it.tipo==='entrada') entradas += Number(it.valor)||0;
+      if(it.tipo==='saida') saidas += Number(it.valor)||0;
+    });
+    // saldo do comparativo = resultado do mês (entradas - saídas), não o
+    // saldo bancário acumulado (que depende dos lançamentos tipo 'saldo')
+    const saldo = entradas - saidas;
+    return {month, entradas, saidas, saldo};
+  });
+}
+
 export function getClosingBalanceBeforeMonth(items, month){
   const balances = computeRunningBalances(items);
   const before = items

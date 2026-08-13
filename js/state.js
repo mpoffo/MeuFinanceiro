@@ -5,7 +5,8 @@ const state = {
   currentMonth: new Date().toISOString().slice(0,7), // YYYY-MM
   currentFilter: 'todos',
   editingId: null,
-  loaded: false
+  loaded: false,
+  historicoImportado: false
 };
 
 export default state;

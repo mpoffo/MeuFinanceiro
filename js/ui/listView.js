@@ -26,9 +26,17 @@ export function render(handlers){
     return;
   }
   const balances = computeRunningBalances(state.items);
+  const today = todayISO();
   const monthItems = state.items
     .filter(it => it.vencimento && it.vencimento.slice(0,7) === state.currentMonth)
     .sort(compareByEffectiveDate);
+
+  // saldo atual = saldo real considerando apenas lançamentos até hoje,
+  // independente do mês que está sendo visualizado
+  const beforeOrTodayAll = state.items
+    .filter(it => effectiveDate(it) <= today)
+    .sort(compareByEffectiveDate);
+  const currentBalance = beforeOrTodayAll.length ? balances[beforeOrTodayAll[beforeOrTodayAll.length-1].id] : 0;
 
   // saldo de fechamento do mês = saldo do último item do mês,
   // ou, se não houver, o último saldo conhecido antes/até este mês
@@ -81,7 +89,6 @@ export function render(handlers){
 
   const displayGroups = buildDateGroups(displayedItems);
 
-  const today = todayISO();
   if(state.currentMonth === today.slice(0,7) && !monthGroups.some(g => g.date === today)){
     const beforeToday = state.items
       .filter(it => effectiveDate(it) <= today)
@@ -118,6 +125,7 @@ export function render(handlers){
           <span style="font-size:11px;font-weight:600;color:var(--ink-soft);background:var(--bg);border-radius:8px;padding:2px 7px;">v${APP_VERSION}</span>
         </div>
         <div style="display:flex;gap:14px;align-items:center;">
+          <button id="cf-dashboard" style="background:none;border:none;font-size:12px;color:var(--ink-soft);font-weight:600;cursor:pointer;">Dashboard</button>
           <button id="cf-manage" style="background:none;border:none;font-size:12px;color:var(--ink-soft);font-weight:600;cursor:pointer;">Gerenciar</button>
           <button id="cf-logout" style="background:none;border:none;font-size:12px;color:var(--ink-soft);font-weight:600;cursor:pointer;">Sair</button>
         </div>
@@ -136,6 +144,7 @@ export function render(handlers){
       <div class="cf-balance-card">
         <div class="cf-balance-label">Saldo do mês</div>
         <div class="cf-balance-value">${fmtBRL(closing)}</div>
+        <div class="cf-balance-current">Saldo atual <b>${fmtBRL(currentBalance)}</b></div>
         <div class="cf-balance-sub">
           <span>Entradas <b>${fmtBRL(totalEntradas)}</b></span>
           <span>Saídas <b>${fmtBRL(totalSaidas)}</b></span>
@@ -164,6 +173,7 @@ export function render(handlers){
   document.getElementById('cf-next').onclick = ()=>{ state.currentMonth = shiftMonth(state.currentMonth,1); saveAppData(); render(handlers); };
   document.getElementById('cf-month-input').onchange = (e)=>{ state.currentMonth = e.target.value; saveAppData(); render(handlers); };
   document.getElementById('cf-fab').onclick = ()=> handlers.onAdd();
+  document.getElementById('cf-dashboard').onclick = ()=> handlers.onDashboard();
   document.getElementById('cf-manage').onclick = ()=> handlers.onManage();
   document.getElementById('cf-logout').onclick = ()=> handlers.onLogout();
   root.querySelectorAll('.cf-filter-chip').forEach(chip=>{

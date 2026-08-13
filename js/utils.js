@@ -50,6 +50,29 @@ export function shiftMonth(ym, n){
   return y+'-'+String(m).padStart(2,'0');
 }
 
+export function monthLabelShort(ym){
+  const [y,m] = ym.split('-').map(Number);
+  const d = new Date(y, m-1, 1);
+  let mon = d.toLocaleDateString('pt-BR', {month:'short'}).replace('.','');
+  mon = mon.charAt(0).toUpperCase() + mon.slice(1);
+  return mon+'/'+String(y).slice(2);
+}
+
+export function lastNMonths(endMonth, n){
+  const result = [];
+  for(let i=n-1;i>=0;i--) result.push(shiftMonth(endMonth, -i));
+  return result;
+}
+
+export function fmtBRLCompact(n){
+  const v = Number(n)||0;
+  const abs = Math.abs(v);
+  const sign = v < 0 ? '-' : '';
+  if(abs >= 1000000) return sign+'R$ '+(abs/1000000).toLocaleString('pt-BR',{maximumFractionDigits:1})+'M';
+  if(abs >= 1000) return sign+'R$ '+(abs/1000).toLocaleString('pt-BR',{maximumFractionDigits:1})+'k';
+  return sign+'R$ '+abs.toLocaleString('pt-BR',{maximumFractionDigits:0});
+}
+
 export function escapeHTML(s){
   return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
