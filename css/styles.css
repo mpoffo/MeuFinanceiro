@@ -270,6 +270,24 @@
 .cf-badge.pendente{color:var(--pendente);background:var(--pendente-bg);}
 .cf-badge.vencido{color:var(--vencido);background:var(--vencido-bg);}
 .cf-badge.saldo{color:var(--primary);background:#E6EEF0;}
+.cf-reorder{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  flex-shrink:0;
+}
+.cf-reorder-btn{
+  border:none;
+  background:var(--bg);
+  color:var(--ink-soft);
+  font-size:9px;
+  line-height:1;
+  padding:4px 6px;
+  border-radius:5px;
+  cursor:pointer;
+}
+.cf-reorder-btn:active{background:var(--line);}
+.cf-reorder-btn:disabled{opacity:0.25;cursor:default;}
 .cf-filters{
   display:flex;
   gap:6px;

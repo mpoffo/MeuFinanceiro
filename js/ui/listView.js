@@ -5,7 +5,7 @@ import state from '../state.js';
 import { saveAppData } from '../api/storage.js';
 import {
   situacaoOf, situacaoLabel, effectiveDate, compareByEffectiveDate,
-  computeRunningBalances, duplicateExact
+  computeRunningBalances, duplicateExact, swapItemOrder
 } from '../domain.js';
 import {
   fmtBRL, fmtDateShort, formatGroupDate, monthLabel, shiftMonth, escapeHTML, todayISO
@@ -102,13 +102,31 @@ export function render(handlers){
 
   displayGroups.reverse();
 
+  function cardsForGroup(g){
+    // exibido em ordem inversa à cronológica (mais recente do dia no topo),
+    // consistente com os grupos de data (mais recentes primeiro); por isso
+    // o saldo do dia (cronologicamente o primeiro) fica no final do grupo.
+    const displayItems = [...g.items].reverse();
+    return displayItems.map((it, idx) => {
+      const upNeighbor = displayItems[idx-1];
+      const downNeighbor = displayItems[idx+1];
+      const canSwapUp = it.tipo !== 'saldo' && upNeighbor && upNeighbor.tipo !== 'saldo';
+      const canSwapDown = it.tipo !== 'saldo' && downNeighbor && downNeighbor.tipo !== 'saldo';
+      return cardHTML(it, {
+        saldoApos: balances[it.id],
+        upTargetId: canSwapUp ? upNeighbor.id : null,
+        downTargetId: canSwapDown ? downNeighbor.id : null
+      });
+    }).join('');
+  }
+
   const listHTML = displayGroups.length
     ? displayGroups.map(g => `
         <div class="cf-group-header">
           <span class="cf-group-date">${formatGroupDate(g.date)}</span>
           <span class="cf-group-balance ${dateBalanceMap[g.date] < 0 ? 'negative' : ''}">${fmtBRL(dateBalanceMap[g.date])}</span>
         </div>
-        ${g.items.length ? g.items.map(cardHTML).join('') : (g.isToday ? '<div class="cf-empty-day">Nenhum lançamento hoje</div>' : '')}
+        ${g.items.length ? cardsForGroup(g) : (g.isToday ? '<div class="cf-empty-day">Nenhum lançamento hoje</div>' : '')}
       `).join('')
     : `<div class="cf-empty">${monthItems.length ? 'Nenhum lançamento com esse filtro.' : 'Nada lançado neste mês ainda.<br>Toque em + para adicionar.'}</div>`;
 
@@ -183,6 +201,18 @@ export function render(handlers){
     const el = document.getElementById('card-'+it.id);
     if(el) attachCardGestures(el, it.id, handlers);
   });
+  root.querySelectorAll('.cf-reorder-btn').forEach(btn=>{
+    btn.onclick = (e)=>{
+      e.stopPropagation();
+      const targetId = btn.dataset.swapWith;
+      const card = btn.closest('.cf-card');
+      if(!targetId || !card) return;
+      const id = card.id.replace('card-','');
+      swapItemOrder(state.items, id, targetId);
+      saveAppData();
+      render(handlers);
+    };
+  });
   applyCompactClass();
 }
 
@@ -192,6 +222,7 @@ function attachCardGestures(el, id, handlers){
   let startX = 0, startY = 0;
 
   function start(e){
+    if(e.target.closest('.cf-reorder-btn')) return;
     longPressed = false;
     const p = e.touches ? e.touches[0] : e;
     startX = p.clientX; startY = p.clientY;
@@ -214,7 +245,8 @@ function attachCardGestures(el, id, handlers){
     clearTimeout(timer);
     el.classList.remove('cf-card-pressing');
   }
-  function end(){
+  function end(e){
+    if(e.target.closest('.cf-reorder-btn')) return;
     clearTimeout(timer);
     el.classList.remove('cf-card-pressing');
     if(!longPressed) handlers.onEditItem(id);
@@ -246,11 +278,18 @@ window.addEventListener('scroll', ()=>{
   }
 }, {passive:true});
 
-function cardHTML(it){
+function cardHTML(it, opts){
   const sit = situacaoOf(it);
   const isEntrada = it.tipo === 'entrada';
   const sign = it.tipo==='saldo' ? '' : (isEntrada ? '+ ' : '− ');
   const showVencimento = effectiveDate(it) !== it.vencimento;
+  const saldoTitle = it.tipo === 'saldo' ? '' : ` title="Saldo após este lançamento: ${escapeHTML(fmtBRL(opts.saldoApos))}"`;
+  const showReorder = it.tipo !== 'saldo' && (opts.upTargetId || opts.downTargetId);
+  const reorderHTML = showReorder ? `
+    <div class="cf-reorder">
+      <button type="button" class="cf-reorder-btn" data-swap-with="${opts.upTargetId||''}" ${opts.upTargetId ? '' : 'disabled'} title="Mover para cima">▲</button>
+      <button type="button" class="cf-reorder-btn" data-swap-with="${opts.downTargetId||''}" ${opts.downTargetId ? '' : 'disabled'} title="Mover para baixo">▼</button>
+    </div>` : '';
   return `
     <div class="cf-card" id="card-${it.id}">
       <div class="cf-card-left">
@@ -262,9 +301,10 @@ function cardHTML(it){
         </div>
       </div>
       <div class="cf-card-right">
-        <div class="cf-card-valor ${it.tipo==='saida'?'saida':'entrada'}">${sign}${fmtBRL(it.valor)}</div>
+        <div class="cf-card-valor ${it.tipo==='saida'?'saida':'entrada'}"${saldoTitle}>${sign}${fmtBRL(it.valor)}</div>
         <div class="cf-badge ${sit}">${situacaoLabel(sit, it.tipo)}</div>
       </div>
+      ${reorderHTML}
     </div>
   `;
 }

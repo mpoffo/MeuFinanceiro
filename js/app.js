@@ -1,5 +1,5 @@
 import state from './state.js';
-import { getSession, signOut } from './api/auth.js';
+import { getSession, signOut, onAuthStateChange } from './api/auth.js';
 import { loadAppData } from './api/storage.js';
 import { render } from './ui/listView.js';
 import { renderAuth } from './ui/authView.js';
@@ -43,8 +43,22 @@ async function handleLogout(){
   renderAuth('login', undefined, handleAuthenticated);
 }
 
+let inRecovery = false;
+
+onAuthStateChange((event, session)=>{
+  if(event === 'PASSWORD_RECOVERY'){
+    inRecovery = true;
+    renderAuth('recovery', undefined, async ()=>{
+      inRecovery = false;
+      state.currentUser = session.user;
+      await handleAuthenticated();
+    });
+  }
+});
+
 async function init(){
   const { data: { session } } = await getSession();
+  if(inRecovery) return;
   if(session){
     state.currentUser = session.user;
     await handleAuthenticated();

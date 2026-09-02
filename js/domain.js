@@ -134,3 +134,12 @@ export function bulkSetValor(items, ids, valor){
 export function bulkDelete(items, ids){
   return items.filter(it => !ids.has(it.id));
 }
+
+export function swapItemOrder(items, idA, idB){
+  const a = items.find(i=>i.id===idA);
+  const b = items.find(i=>i.id===idB);
+  if(!a || !b) return;
+  const tmp = a.order;
+  a.order = b.order;
+  b.order = tmp;
+}
