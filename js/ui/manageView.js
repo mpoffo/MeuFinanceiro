@@ -38,7 +38,11 @@ function matchesFilters(it){
 }
 
 function byVencimentoAsc(a,b){
-  if(a.vencimento === b.vencimento) return (a.order||0) - (b.order||0);
+  if(a.vencimento === b.vencimento){
+    if(a.tipo === 'saldo' && b.tipo !== 'saldo') return -1;
+    if(b.tipo === 'saldo' && a.tipo !== 'saldo') return 1;
+    return (a.order||0) - (b.order||0);
+  }
   return a.vencimento < b.vencimento ? -1 : 1;
 }
 
@@ -146,7 +150,7 @@ function rowHTML(it){
       <td>${fmtDateShort(it.vencimento)}</td>
       <td class="mv-valor ${it.tipo}">${fmtBRL(it.valor)}</td>
       <td>${it.dataPagto ? fmtDateShort(it.dataPagto) : '—'}</td>
-      <td><span class="cf-badge ${sit}">${situacaoLabel(sit)}</span></td>
+      <td><span class="cf-badge ${sit}">${situacaoLabel(sit, it.tipo)}</span></td>
     </tr>
   `;
 }

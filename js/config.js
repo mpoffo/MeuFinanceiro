@@ -1,4 +1,4 @@
-export const APP_VERSION = 6;
+export const APP_VERSION = 7;
 export const DATA_VERSION = 2;
 
 // ==== CONFIGURAÇÃO DO SUPABASE — troque pelos valores do seu projeto ====

@@ -9,7 +9,8 @@ export function situacaoOf(it){
   return 'agendado';
 }
 
-export function situacaoLabel(s){
+export function situacaoLabel(s, tipo){
+  if(s === 'pago' && tipo === 'entrada') return 'Recebido';
   return {pago:'Pago', agendado:'Agendado', pendente:'Pendente', vencido:'Vencido', saldo:'Saldo'}[s] || s;
 }
 

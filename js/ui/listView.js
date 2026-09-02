@@ -263,7 +263,7 @@ function cardHTML(it){
       </div>
       <div class="cf-card-right">
         <div class="cf-card-valor ${it.tipo==='saida'?'saida':'entrada'}">${sign}${fmtBRL(it.valor)}</div>
-        <div class="cf-badge ${sit}">${situacaoLabel(sit)}</div>
+        <div class="cf-badge ${sit}">${situacaoLabel(sit, it.tipo)}</div>
       </div>
     </div>
   `;
