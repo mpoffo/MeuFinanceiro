@@ -5,7 +5,7 @@ import state from '../state.js';
 import { saveAppData } from '../api/storage.js';
 import {
   situacaoOf, situacaoLabel, effectiveDate, compareByEffectiveDate,
-  computeRunningBalances, duplicateExact, swapItemOrder
+  computeRunningBalances, duplicateExact, moveItem
 } from '../domain.js';
 import {
   fmtBRL, fmtDateShort, formatGroupDate, monthLabel, shiftMonth, escapeHTML, todayISO
@@ -60,6 +60,11 @@ export function render(handlers){
     ? monthItems
     : monthItems.filter(it => situacaoOf(it) === state.currentFilter);
 
+  // arrastar para outro dia só é permitido com o filtro "Todos": com um filtro
+  // ativo, o dia de destino pode conter lançamentos ocultos e a reordenação
+  // ficaria incompleta/inconsistente.
+  const dragEnabled = state.currentFilter === 'todos';
+
   function buildDateGroups(list){
     const groups = [];
     let lastDate = null, current = null;
@@ -107,26 +112,16 @@ export function render(handlers){
     // consistente com os grupos de data (mais recentes primeiro); por isso
     // o saldo do dia (cronologicamente o primeiro) fica no final do grupo.
     const displayItems = [...g.items].reverse();
-    return displayItems.map((it, idx) => {
-      const upNeighbor = displayItems[idx-1];
-      const downNeighbor = displayItems[idx+1];
-      const canSwapUp = it.tipo !== 'saldo' && upNeighbor && upNeighbor.tipo !== 'saldo';
-      const canSwapDown = it.tipo !== 'saldo' && downNeighbor && downNeighbor.tipo !== 'saldo';
-      return cardHTML(it, {
-        saldoApos: balances[it.id],
-        upTargetId: canSwapUp ? upNeighbor.id : null,
-        downTargetId: canSwapDown ? downNeighbor.id : null
-      });
-    }).join('');
+    return displayItems.map(it => cardHTML(it, { saldoApos: balances[it.id], dragEnabled })).join('');
   }
 
   const listHTML = displayGroups.length
     ? displayGroups.map(g => `
-        <div class="cf-group-header">
+        <div class="cf-group-header" data-date="${g.date}">
           <span class="cf-group-date">${formatGroupDate(g.date)}</span>
           <span class="cf-group-balance ${dateBalanceMap[g.date] < 0 ? 'negative' : ''}">${fmtBRL(dateBalanceMap[g.date])}</span>
         </div>
-        ${g.items.length ? cardsForGroup(g) : (g.isToday ? '<div class="cf-empty-day">Nenhum lançamento hoje</div>' : '')}
+        ${g.items.length ? cardsForGroup(g) : (g.isToday ? '<div class="cf-empty-day" data-date="'+g.date+'">Nenhum lançamento hoje</div>' : '')}
       `).join('')
     : `<div class="cf-empty">${monthItems.length ? 'Nenhum lançamento com esse filtro.' : 'Nada lançado neste mês ainda.<br>Toque em + para adicionar.'}</div>`;
 
@@ -201,18 +196,11 @@ export function render(handlers){
     const el = document.getElementById('card-'+it.id);
     if(el) attachCardGestures(el, it.id, handlers);
   });
-  root.querySelectorAll('.cf-reorder-btn').forEach(btn=>{
-    btn.onclick = (e)=>{
-      e.stopPropagation();
-      const targetId = btn.dataset.swapWith;
-      const card = btn.closest('.cf-card');
-      if(!targetId || !card) return;
-      const id = card.id.replace('card-','');
-      swapItemOrder(state.items, id, targetId);
-      saveAppData();
-      render(handlers);
-    };
-  });
+  if(dragEnabled){
+    root.querySelectorAll('.cf-drag-handle').forEach(handle=>{
+      handle.addEventListener('pointerdown', (e)=> startDrag(e, handle, handlers));
+    });
+  }
   applyCompactClass();
 }
 
@@ -222,7 +210,6 @@ function attachCardGestures(el, id, handlers){
   let startX = 0, startY = 0;
 
   function start(e){
-    if(e.target.closest('.cf-reorder-btn')) return;
     longPressed = false;
     const p = e.touches ? e.touches[0] : e;
     startX = p.clientX; startY = p.clientY;
@@ -245,8 +232,7 @@ function attachCardGestures(el, id, handlers){
     clearTimeout(timer);
     el.classList.remove('cf-card-pressing');
   }
-  function end(e){
-    if(e.target.closest('.cf-reorder-btn')) return;
+  function end(){
     clearTimeout(timer);
     el.classList.remove('cf-card-pressing');
     if(!longPressed) handlers.onEditItem(id);
@@ -257,6 +243,105 @@ function attachCardGestures(el, id, handlers){
   el.addEventListener('pointerup', end);
   el.addEventListener('pointercancel', cancel);
   el.addEventListener('pointerleave', cancel);
+}
+
+// --- drag and drop entre lançamentos (reordenar no mesmo dia ou mover de dia) ---
+// O arraste começa apenas pela alça (.cf-drag-handle), que fica fora do card
+// e tem touch-action:none — assim nunca concorre com o toque/long-press do
+// card (que abre edição / duplica).
+
+function computeDropTarget(clientY, draggedId){
+  const groupEls = [...root.querySelectorAll('.cf-group-header')];
+  if(!groupEls.length) return null;
+  let targetHeader = groupEls[0];
+  for(const gh of groupEls){
+    if(gh.getBoundingClientRect().top <= clientY) targetHeader = gh;
+    else break;
+  }
+  const date = targetHeader.dataset.date;
+  const rows = [...root.querySelectorAll(`.cf-card-row[data-date="${date}"]`)]
+    .filter(r => r.dataset.saldo !== '1' && r.dataset.id !== draggedId);
+  let displayIndex = rows.length;
+  for(let i=0;i<rows.length;i++){
+    const r = rows[i].getBoundingClientRect();
+    if(clientY < r.top + r.height/2){ displayIndex = i; break; }
+  }
+  return { date, displayIndex, rows };
+}
+
+function placeIndicator(target, indicator){
+  if(!target){ indicator.remove(); return; }
+  const { rows, displayIndex, date } = target;
+  const anchor = rows[displayIndex];
+  if(anchor){
+    anchor.parentNode.insertBefore(indicator, anchor);
+    return;
+  }
+  const saldoRow = root.querySelector(`.cf-card-row[data-date="${date}"][data-saldo="1"]`);
+  if(saldoRow){
+    saldoRow.parentNode.insertBefore(indicator, saldoRow);
+    return;
+  }
+  const dateRows = [...root.querySelectorAll(`.cf-card-row[data-date="${date}"]`)];
+  if(dateRows.length){
+    const last = dateRows[dateRows.length-1];
+    last.parentNode.insertBefore(indicator, last.nextSibling);
+    return;
+  }
+  const header = root.querySelector(`.cf-group-header[data-date="${date}"]`);
+  if(header) header.parentNode.insertBefore(indicator, header.nextSibling);
+}
+
+function startDrag(e, handle, handlers){
+  e.preventDefault();
+  const row = handle.closest('.cf-card-row');
+  const id = row.dataset.id;
+  const rect = row.getBoundingClientRect();
+
+  const ghost = row.cloneNode(true);
+  ghost.classList.add('cf-drag-ghost');
+  ghost.querySelectorAll('[id]').forEach(elWithId => elWithId.removeAttribute('id'));
+  ghost.style.width = rect.width + 'px';
+  ghost.style.left = rect.left + 'px';
+  ghost.style.top = rect.top + 'px';
+  document.body.appendChild(ghost);
+
+  const indicator = document.createElement('div');
+  indicator.className = 'cf-drop-indicator';
+
+  root.querySelectorAll('.cf-card-row').forEach(r => r.classList.add('cf-dim'));
+  document.body.classList.add('cf-dragging-active');
+
+  const offsetX = e.clientX - rect.left;
+  const offsetY = e.clientY - rect.top;
+  let currentTarget = null;
+
+  function onMove(ev){
+    ghost.style.left = (ev.clientX - offsetX) + 'px';
+    ghost.style.top = (ev.clientY - offsetY) + 'px';
+    currentTarget = computeDropTarget(ev.clientY, id);
+    placeIndicator(currentTarget, indicator);
+  }
+  function finish(commit){
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onUp);
+    document.removeEventListener('pointercancel', onCancel);
+    ghost.remove();
+    indicator.remove();
+    root.querySelectorAll('.cf-card-row').forEach(r => r.classList.remove('cf-dim'));
+    document.body.classList.remove('cf-dragging-active');
+    if(commit && currentTarget){
+      moveItem(state.items, id, currentTarget.date, currentTarget.displayIndex);
+      saveAppData();
+      render(handlers);
+    }
+  }
+  function onUp(){ finish(true); }
+  function onCancel(){ finish(false); }
+
+  document.addEventListener('pointermove', onMove);
+  document.addEventListener('pointerup', onUp);
+  document.addEventListener('pointercancel', onCancel);
 }
 
 let isCompact = false;
@@ -284,27 +369,26 @@ function cardHTML(it, opts){
   const sign = it.tipo==='saldo' ? '' : (isEntrada ? '+ ' : '− ');
   const showVencimento = effectiveDate(it) !== it.vencimento;
   const saldoTitle = it.tipo === 'saldo' ? '' : ` title="Saldo após este lançamento: ${escapeHTML(fmtBRL(opts.saldoApos))}"`;
-  const showReorder = it.tipo !== 'saldo' && (opts.upTargetId || opts.downTargetId);
-  const reorderHTML = showReorder ? `
-    <div class="cf-reorder">
-      <button type="button" class="cf-reorder-btn" data-swap-with="${opts.upTargetId||''}" ${opts.upTargetId ? '' : 'disabled'} title="Mover para cima">▲</button>
-      <button type="button" class="cf-reorder-btn" data-swap-with="${opts.downTargetId||''}" ${opts.downTargetId ? '' : 'disabled'} title="Mover para baixo">▼</button>
-    </div>` : '';
+  const handleHTML = (opts.dragEnabled && it.tipo !== 'saldo')
+    ? `<div class="cf-drag-handle" title="Arrastar para reordenar ou mover de dia">⠿</div>`
+    : `<div class="cf-drag-handle-spacer"></div>`;
   return `
-    <div class="cf-card" id="card-${it.id}">
-      <div class="cf-card-left">
-        <div class="cf-card-item">${escapeHTML(it.item)}</div>
-        <div class="cf-card-meta">
-          ${it.conta ? `<span>${escapeHTML(it.conta)}</span>` : ''}
-          ${it.parcela ? `<span class="cf-parc-tag">${escapeHTML(it.parcela)}</span>` : ''}
-          ${showVencimento ? `<span>venc. ${fmtDateShort(it.vencimento)}</span>` : ''}
+    <div class="cf-card-row" data-id="${it.id}" data-date="${effectiveDate(it)}" data-saldo="${it.tipo==='saldo'?'1':'0'}">
+      <div class="cf-card" id="card-${it.id}">
+        <div class="cf-card-left">
+          <div class="cf-card-item">${escapeHTML(it.item)}</div>
+          <div class="cf-card-meta">
+            ${it.conta ? `<span>${escapeHTML(it.conta)}</span>` : ''}
+            ${it.parcela ? `<span class="cf-parc-tag">${escapeHTML(it.parcela)}</span>` : ''}
+            ${showVencimento ? `<span>venc. ${fmtDateShort(it.vencimento)}</span>` : ''}
+          </div>
+        </div>
+        <div class="cf-card-right">
+          <div class="cf-card-valor ${it.tipo==='saida'?'saida':'entrada'}"${saldoTitle}>${sign}${fmtBRL(it.valor)}</div>
+          <div class="cf-badge ${sit}">${situacaoLabel(sit, it.tipo)}</div>
         </div>
       </div>
-      <div class="cf-card-right">
-        <div class="cf-card-valor ${it.tipo==='saida'?'saida':'entrada'}"${saldoTitle}>${sign}${fmtBRL(it.valor)}</div>
-        <div class="cf-badge ${sit}">${situacaoLabel(sit, it.tipo)}</div>
-      </div>
-      ${reorderHTML}
+      ${handleHTML}
     </div>
   `;
 }

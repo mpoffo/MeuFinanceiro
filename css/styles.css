@@ -270,24 +270,58 @@
 .cf-badge.pendente{color:var(--pendente);background:var(--pendente-bg);}
 .cf-badge.vencido{color:var(--vencido);background:var(--vencido-bg);}
 .cf-badge.saldo{color:var(--primary);background:#E6EEF0;}
-.cf-reorder{
+.cf-card-row{
   display:flex;
-  flex-direction:column;
-  gap:2px;
+  align-items:stretch;
+  gap:6px;
+}
+.cf-card-row .cf-card{
+  flex:1;
+  min-width:0;
+}
+.cf-card-row.cf-dim{
+  opacity:0.35;
+  transition:opacity 0.15s ease;
+}
+.cf-drag-handle, .cf-drag-handle-spacer{
   flex-shrink:0;
+  width:30px;
 }
-.cf-reorder-btn{
-  border:none;
-  background:var(--bg);
+.cf-drag-handle{
+  display:flex;
+  align-items:center;
+  justify-content:center;
   color:var(--ink-soft);
-  font-size:9px;
+  font-size:17px;
   line-height:1;
-  padding:4px 6px;
-  border-radius:5px;
-  cursor:pointer;
+  border-radius:8px;
+  cursor:grab;
+  touch-action:none;
+  user-select:none;
+  -webkit-user-select:none;
 }
-.cf-reorder-btn:active{background:var(--line);}
-.cf-reorder-btn:disabled{opacity:0.25;cursor:default;}
+.cf-drag-handle:active{
+  cursor:grabbing;
+  background:var(--bg);
+}
+.cf-drag-ghost{
+  position:fixed;
+  z-index:1000;
+  pointer-events:none;
+  opacity:0.97;
+  box-shadow:0 10px 26px rgba(0,0,0,0.2);
+  border-radius:var(--radius);
+}
+.cf-drop-indicator{
+  height:3px;
+  margin:3px 0;
+  background:var(--primary);
+  border-radius:2px;
+}
+body.cf-dragging-active{
+  user-select:none;
+  -webkit-user-select:none;
+}
 .cf-filters{
   display:flex;
   gap:6px;

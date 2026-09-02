@@ -135,11 +135,18 @@ export function bulkDelete(items, ids){
   return items.filter(it => !ids.has(it.id));
 }
 
-export function swapItemOrder(items, idA, idB){
-  const a = items.find(i=>i.id===idA);
-  const b = items.find(i=>i.id===idB);
-  if(!a || !b) return;
-  const tmp = a.order;
-  a.order = b.order;
-  b.order = tmp;
+// move um lançamento para uma nova data/posição (drag and drop na lista).
+// displayIndex é a posição entre os demais lançamentos (não-saldo) daquele
+// dia na ORDEM EXIBIDA (mais recente no topo) — por isso é convertida para
+// o índice cronológico (ascendente) antes de recalcular os `order`.
+export function moveItem(items, id, targetDate, displayIndex){
+  const it = items.find(i=>i.id===id);
+  if(!it || it.tipo === 'saldo') return;
+  if(effectiveDate(it) !== targetDate) it.dataPagto = targetDate;
+  const siblings = items
+    .filter(i => i.id !== id && i.tipo !== 'saldo' && effectiveDate(i) === targetDate)
+    .sort((a,b)=>(a.order||0)-(b.order||0));
+  const insertAt = Math.max(0, Math.min(siblings.length, siblings.length - displayIndex));
+  siblings.splice(insertAt, 0, it);
+  siblings.forEach((s, idx)=>{ s.order = (idx+1) * 10; });
 }
