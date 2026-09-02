@@ -23,7 +23,11 @@ export function effectiveDate(it){
 
 export function compareByEffectiveDate(a,b){
   const da = effectiveDate(a), db = effectiveDate(b);
-  if(da === db) return (a.order||0) - (b.order||0);
+  if(da === db){
+    if(a.tipo === 'saldo' && b.tipo !== 'saldo') return -1;
+    if(b.tipo === 'saldo' && a.tipo !== 'saldo') return 1;
+    return (a.order||0) - (b.order||0);
+  }
   return da < db ? -1 : 1;
 }
 
