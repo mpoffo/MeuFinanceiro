@@ -4,6 +4,7 @@ import { loadAppData } from './api/storage.js';
 import { render } from './ui/listView.js';
 import { renderAuth } from './ui/authView.js';
 import { openSheet } from './ui/sheetView.js';
+import { openAdjustSheet } from './ui/adjustView.js';
 import { renderManage } from './ui/manageView.js';
 import { renderDashboard } from './ui/dashboardView.js';
 
@@ -11,6 +12,7 @@ function refresh(){
   render({
     onAdd: () => openSheet(null, { onChange: refresh }),
     onEditItem: (id) => openSheet(id, { onChange: refresh }),
+    onAdjust: (date) => openAdjustSheet(date, { onChange: refresh }),
     onLogout: handleLogout,
     onManage: showManage,
     onDashboard: showDashboard

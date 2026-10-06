@@ -119,7 +119,7 @@ export function render(handlers){
     ? displayGroups.map(g => `
         <div class="cf-group-header" data-date="${g.date}">
           <span class="cf-group-date">${formatGroupDate(g.date)}</span>
-          <span class="cf-group-balance ${dateBalanceMap[g.date] < 0 ? 'negative' : ''}">${fmtBRL(dateBalanceMap[g.date])}</span>
+          <span class="cf-group-balance ${dateBalanceMap[g.date] < 0 ? 'negative' : ''}" data-adjust-date="${g.date}" title="Acertar saldo deste dia">${fmtBRL(dateBalanceMap[g.date])}</span>
         </div>
         ${g.items.length ? cardsForGroup(g) : (g.isToday ? '<div class="cf-empty-day" data-date="'+g.date+'">Nenhum lançamento hoje</div>' : '')}
       `).join('')
@@ -157,7 +157,7 @@ export function render(handlers){
       <div class="cf-balance-card">
         <div class="cf-balance-label">Saldo do mês</div>
         <div class="cf-balance-value">${fmtBRL(closing)}</div>
-        <div class="cf-balance-current">Saldo atual <b>${fmtBRL(currentBalance)}</b></div>
+        <div class="cf-balance-current">Saldo atual <b>${fmtBRL(currentBalance)}</b> <button class="cf-adjust-btn" id="cf-adjust">Acertar</button></div>
         <div class="cf-balance-sub">
           <span>Entradas <b>${fmtBRL(totalEntradas)}</b></span>
           <span>Saídas <b>${fmtBRL(totalSaidas)}</b></span>
@@ -187,6 +187,10 @@ export function render(handlers){
   document.getElementById('cf-month-input').onchange = (e)=>{ state.currentMonth = e.target.value; saveAppData(); render(handlers); };
   document.getElementById('cf-fab').onclick = ()=> handlers.onAdd();
   document.getElementById('cf-dashboard').onclick = ()=> handlers.onDashboard();
+  document.getElementById('cf-adjust').onclick = ()=> handlers.onAdjust(today);
+  root.querySelectorAll('[data-adjust-date]').forEach(el=>{
+    el.onclick = ()=> handlers.onAdjust(el.dataset.adjustDate);
+  });
   document.getElementById('cf-manage').onclick = ()=> handlers.onManage();
   document.getElementById('cf-logout').onclick = ()=> handlers.onLogout();
   root.querySelectorAll('.cf-filter-chip').forEach(chip=>{
@@ -380,6 +384,7 @@ function cardHTML(it, opts){
           <div class="cf-card-meta">
             ${it.conta ? `<span>${escapeHTML(it.conta)}</span>` : ''}
             ${it.parcela ? `<span class="cf-parc-tag">${escapeHTML(it.parcela)}</span>` : ''}
+            ${it.acerto ? `<span class="cf-parc-tag">acerto</span>` : ''}
             ${showVencimento ? `<span>venc. ${fmtDateShort(it.vencimento)}</span>` : ''}
           </div>
         </div>

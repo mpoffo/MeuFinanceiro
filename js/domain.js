@@ -150,3 +150,48 @@ export function moveItem(items, id, targetDate, displayIndex){
   siblings.splice(insertAt, 0, it);
   siblings.forEach((s, idx)=>{ s.order = (idx+1) * 10; });
 }
+
+// saldo do sistema ao final de um dia (após todos os lançamentos daquele dia).
+// excludeId permite ignorar um lançamento (ex.: o acerto já existente no dia).
+export function balanceAtEndOfDay(items, date, excludeId){
+  const list = excludeId ? items.filter(i => i.id !== excludeId) : items;
+  const balances = computeRunningBalances(list);
+  const upTo = list.filter(it => effectiveDate(it) <= date).sort(compareByEffectiveDate);
+  return upTo.length ? balances[upTo[upTo.length-1].id] : 0;
+}
+
+export function findBalanceAdjustment(items, date){
+  return items.find(it => it.acerto && effectiveDate(it) === date) || null;
+}
+
+// cria/atualiza/remove o "Acerto de saldo" do dia para que o saldo do sistema
+// ao final daquele dia feche com o saldo efetivo informado. O acerto entra
+// como último lançamento do dia (entrada se faltava dinheiro no sistema,
+// saída se sobrava). Há no máximo um acerto por dia.
+export function applyBalanceAdjustment(items, date, saldoEfetivo, conta){
+  const existing = findBalanceAdjustment(items, date);
+  const sistema = balanceAtEndOfDay(items, date, existing && existing.id);
+  const diff = Math.round((saldoEfetivo - sistema) * 100) / 100;
+  if(diff === 0){
+    if(existing) items.splice(items.indexOf(existing), 1);
+    return { diff, sistema, action: existing ? 'removed' : 'none' };
+  }
+  const maxOrder = items
+    .filter(i => i !== existing && effectiveDate(i) === date)
+    .reduce((m, i) => Math.max(m, i.order||0), 0);
+  const fields = {
+    item: 'Acerto de saldo',
+    tipo: diff > 0 ? 'entrada' : 'saida',
+    valor: Math.abs(diff),
+    vencimento: date,
+    dataPagto: date,
+    order: maxOrder + 1,
+    acerto: true
+  };
+  if(existing){
+    Object.assign(existing, fields);
+    return { diff, sistema, action: 'updated' };
+  }
+  items.push({ id: uid(), conta: conta || '', parcela: '', ...fields });
+  return { diff, sistema, action: 'created' };
+}
