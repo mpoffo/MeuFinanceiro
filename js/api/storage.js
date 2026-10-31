@@ -2,13 +2,14 @@ import { supabase } from './client.js';
 import { DATA_VERSION } from '../config.js';
 import { buildSeed } from '../seed-data.js';
 import { buildHistorico } from '../historico-data.js';
-import { buildInvestSeed } from '../investments.js';
+import { buildInvestSeed, migrateInvestimentos, INVEST_REVISAO } from '../investments.js';
 import state from '../state.js';
 import { showToast } from '../ui/toast.js';
 
 export async function loadAppData(){
   let hadData = false;
   state.investimentos = null;
+  state.investRevisao = 0;
   try{
     const { data, error } = await supabase
       .from('app_data')
@@ -22,6 +23,7 @@ export async function loadAppData(){
       state.currentMonth = data.value.lastMonth || state.currentMonth;
       state.historicoImportado = !!data.value.historicoImportado;
       state.investimentos = data.value.investimentos;
+      state.investRevisao = data.value.investRevisao || 0;
       hadData = true;
     }
   }catch(e){
@@ -43,6 +45,10 @@ export async function loadAppData(){
   if(!Array.isArray(state.investimentos)){
     // migracao unica: cria a carteira de investimentos com as posicoes iniciais
     state.investimentos = buildInvestSeed();
+    state.investRevisao = INVEST_REVISAO;
+    await saveAppData();
+  } else if(migrateInvestimentos(state.investimentos, state.investRevisao)){
+    state.investRevisao = INVEST_REVISAO;
     await saveAppData();
   }
   state.loaded = true;
@@ -58,7 +64,8 @@ export async function saveAppData(){
         lastConta: state.lastConta,
         lastMonth: state.currentMonth,
         historicoImportado: state.historicoImportado,
-        investimentos: state.investimentos
+        investimentos: state.investimentos,
+        investRevisao: state.investRevisao
       },
       updated_at: new Date().toISOString()
     });

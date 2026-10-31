@@ -16,6 +16,45 @@ export function categoriaOf(key){
   return CATEGORIAS.find(c => c.key === key) || {key, label:key, color:'#5B6672'};
 }
 
+// PicPay = saldo em conta + Cofrinho Turbinado, desde 11/06/2026 (extrato de 30/10/2026).
+// Aportes: Pix recebidos e resgates de outros cofrinhos; a transferência da conta para o
+// cofrinho é interna. O cofrinho só tem saldo conhecido em 31/08 (10.000,00) e 28/10
+// (10.203,58); nas datas intermediárias o saldo é a conta do extrato + o cofrinho
+// estimado pelo CDI.
+export function picpayRevisado(){
+  return {id:'inv-picpay-cofrinho', codigo:'PICPAY-COFRINHO', emissor:'PicPay', categoria:'CDB',
+    dataAporte:'2026-06-11', valorAportado:2.75, taxa:'Cofrinho 102% do CDI + saldo em conta', vencimento:'',
+    carencia:'', ir:'Regressivo', fgc:'Sim',
+    movimentos:[
+      {id:'pp-m1', data:'2026-08-31', valor:15005.98},
+      {id:'pp-m2', data:'2026-09-01', valor:1000},
+      {id:'pp-m3', data:'2026-10-01', valor:1000},
+      {id:'pp-m4', data:'2026-10-06', valor:25000}
+    ],
+    historico:[
+      {data:'2026-07-13', saldo:2.78}, {data:'2026-08-11', saldo:2.80},
+      {data:'2026-08-31', saldo:15008.78}, {data:'2026-09-01', saldo:16013.88},
+      {data:'2026-09-11', saldo:16049.68}, {data:'2026-10-01', saldo:17174.15},
+      {data:'2026-10-06', saldo:42189.37}, {data:'2026-10-13', saldo:42209.71},
+      {data:'2026-10-28', saldo:42265.82}
+    ]};
+}
+
+// aplica correções pontuais nos dados já salvos; devolve true se algo mudou
+export const INVEST_REVISAO = 1;
+export function migrateInvestimentos(invs, revisao){
+  if(revisao >= 1) return false;
+  const i = invs.findIndex(inv => inv.id === 'inv-picpay-cofrinho');
+  if(i >= 0){
+    const rev = picpayRevisado();
+    const posteriores = (invs[i].historico || []).filter(h => h.data > '2026-10-28');
+    const movPosteriores = (invs[i].movimentos || []).filter(m => m.data > '2026-10-28');
+    invs[i] = {...invs[i], dataAporte: rev.dataAporte, valorAportado: rev.valorAportado, taxa: rev.taxa,
+      movimentos: [...rev.movimentos, ...movPosteriores], historico: [...rev.historico, ...posteriores]};
+  }
+  return true;
+}
+
 export function buildInvestSeed(){
   return [
     {id:'inv-td-selic-2031', codigo:'TD-SELIC2031-2026-09-08', emissor:'Tesouro Nacional', categoria:'TES_SELIC',
@@ -27,9 +66,7 @@ export function buildInvestSeed(){
     {id:'inv-lca-pre', codigo:'LCA-PRE-2026-09-03', emissor:'Itaú Unibanco', categoria:'LCA',
       dataAporte:'2026-09-03', valorAportado:75000, taxa:'12,50% a.a. (a confirmar)', vencimento:'',
       carencia:'6 meses (a confirmar)', ir:'Isento', fgc:'Sim', historico:[{data:'2026-10-28', saldo:76229.03}]},
-    {id:'inv-picpay-cofrinho', codigo:'PICPAY-COFRINHO', emissor:'PicPay', categoria:'CDB',
-      dataAporte:'2026-08-31', valorAportado:10000, taxa:'102% do CDI', vencimento:'',
-      carencia:'', ir:'Regressivo', fgc:'Sim', historico:[{data:'2026-10-28', saldo:10203.58}]}
+    picpayRevisado()
   ];
 }
 
