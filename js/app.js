@@ -7,6 +7,7 @@ import { openSheet } from './ui/sheetView.js';
 import { openAdjustSheet } from './ui/adjustView.js';
 import { renderManage } from './ui/manageView.js';
 import { renderDashboard } from './ui/dashboardView.js';
+import { renderInvestments } from './ui/investView.js';
 
 function refresh(){
   render({
@@ -15,7 +16,8 @@ function refresh(){
     onAdjust: (date) => openAdjustSheet(date, { onChange: refresh }),
     onLogout: handleLogout,
     onManage: showManage,
-    onDashboard: showDashboard
+    onDashboard: showDashboard,
+    onInvestments: showInvestments
   });
 }
 
@@ -29,6 +31,12 @@ function showManage(){
 
 function showDashboard(){
   renderDashboard({
+    onBack: refresh
+  });
+}
+
+function showInvestments(){
+  renderInvestments({
     onBack: refresh
   });
 }

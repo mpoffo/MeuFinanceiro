@@ -2,11 +2,13 @@ import { supabase } from './client.js';
 import { DATA_VERSION } from '../config.js';
 import { buildSeed } from '../seed-data.js';
 import { buildHistorico } from '../historico-data.js';
+import { buildInvestSeed } from '../investments.js';
 import state from '../state.js';
 import { showToast } from '../ui/toast.js';
 
 export async function loadAppData(){
   let hadData = false;
+  state.investimentos = null;
   try{
     const { data, error } = await supabase
       .from('app_data')
@@ -19,6 +21,7 @@ export async function loadAppData(){
       state.lastConta = data.value.lastConta || 'Itaú';
       state.currentMonth = data.value.lastMonth || state.currentMonth;
       state.historicoImportado = !!data.value.historicoImportado;
+      state.investimentos = data.value.investimentos;
       hadData = true;
     }
   }catch(e){
@@ -37,6 +40,11 @@ export async function loadAppData(){
     state.historicoImportado = true;
     await saveAppData();
   }
+  if(!Array.isArray(state.investimentos)){
+    // migracao unica: cria a carteira de investimentos com as posicoes iniciais
+    state.investimentos = buildInvestSeed();
+    await saveAppData();
+  }
   state.loaded = true;
 }
 
@@ -49,7 +57,8 @@ export async function saveAppData(){
         items: state.items,
         lastConta: state.lastConta,
         lastMonth: state.currentMonth,
-        historicoImportado: state.historicoImportado
+        historicoImportado: state.historicoImportado,
+        investimentos: state.investimentos
       },
       updated_at: new Date().toISOString()
     });

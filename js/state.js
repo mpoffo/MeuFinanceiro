@@ -1,6 +1,7 @@
 const state = {
   currentUser: null,
   items: [],
+  investimentos: null,
   lastConta: 'Itaú',
   currentMonth: new Date().toISOString().slice(0,7), // YYYY-MM
   currentFilter: 'todos',

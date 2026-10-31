@@ -134,7 +134,8 @@
 .cf-balance-current b{font-weight:700;}
 .cf-balance-sub{
   display:flex;
-  gap:18px;
+  flex-wrap:wrap;
+  gap:4px 18px;
   margin-top:12px;
   font-size:13px;
   opacity:0.9;
@@ -367,6 +368,8 @@ body.cf-dragging-active{
   .cf-fab{ transform:none; right:20px; left:auto; }
 }
 .cf-sheet-backdrop{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  color:var(--ink);
   position:fixed;
   inset:0;
   background:rgba(20,25,30,0.45);
@@ -1123,3 +1126,100 @@ body.cf-dragging-active{
 .cf-adj-info b.entrada{ color:var(--entrada); }
 .cf-adj-info b.saida{ color:var(--vencido); }
 .cf-adj-note{ font-size:12px; }
+
+/* ===== Investimentos ===== */
+.iv-period{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  padding:0 16px 14px;
+}
+.iv-period #iv-period{ flex:1 1 300px; max-width:420px; }
+.iv-period .iv-mode{ flex:0 1 220px; }
+.iv-note{
+  padding:0 16px 12px;
+  font-size:12.5px;
+  color:var(--ink-soft);
+}
+.iv-note-warn{ color:#B42318; }
+.iv-kpi-sub{
+  margin-top:4px;
+  font-size:12px;
+  color:var(--ink-soft);
+  font-weight:600;
+}
+.iv-hint{
+  font-size:12px;
+  color:var(--ink-soft);
+  margin:-2px 0 8px;
+}
+.iv-legend{ flex-wrap:wrap; }
+.iv-empty{
+  padding:48px 16px;
+  text-align:center;
+  color:var(--ink-soft);
+  font-size:13px;
+}
+.iv-tip-soft{ font-weight:400; opacity:0.75; }
+.iv-table th, .iv-table td{ white-space:nowrap; }
+.iv-table .iv-num{ text-align:right; font-variant-numeric:tabular-nums; }
+.iv-table .dv-legend-swatch{ vertical-align:middle; margin-right:4px; }
+.iv-total-row td{ font-weight:700; background:var(--bg); }
+.iv-hist{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  margin-bottom:8px;
+}
+.iv-hist-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:6px 10px;
+  background:var(--bg);
+  border-radius:8px;
+  font-size:13px;
+}
+.iv-hist-row b{ flex:1; text-align:right; }
+.iv-hist-add input{
+  min-width:0;
+  padding:10px 12px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  font-size:14px;
+  font-family:inherit;
+}
+.iv-hist-add .cf-btn{ flex:0 0 auto; padding:10px 14px; }
+.iv-up-last{
+  font-weight:500;
+  color:var(--ink-soft);
+  text-transform:none;
+  margin-left:6px;
+}
+.iv-topbar{ flex-wrap:wrap; }
+@media (max-width:600px){
+  .iv-topbar .cf-title{ flex:1 1 60% !important; }
+  .iv-topbar .cf-btn{ flex:1 1 0; }
+}
+.iv-legend-btn{
+  background:none;
+  border:none;
+  padding:2px 0;
+  font-family:inherit;
+  cursor:pointer;
+}
+.iv-legend-btn.off{ opacity:0.4; text-decoration:line-through; }
+.iv-legend-btn.off .dv-legend-swatch{ filter:grayscale(1); }
+.iv-hist-add select{
+  flex:0 0 auto;
+  width:auto;
+  padding:10px 8px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  font-size:14px;
+  font-family:inherit;
+  background:var(--bg);
+}
+.iv-mov-tipo{ font-size:12px; font-weight:600; }
+.iv-mov-tipo.entrada{ color:#1B8A5A; }
+.iv-mov-tipo.saida{ color:#B42318; }

@@ -139,6 +139,7 @@ export function render(handlers){
         </div>
         <div style="display:flex;gap:14px;align-items:center;">
           <button id="cf-dashboard" style="background:none;border:none;font-size:12px;color:var(--ink-soft);font-weight:600;cursor:pointer;">Dashboard</button>
+          <button id="cf-investments" style="background:none;border:none;font-size:12px;color:var(--ink-soft);font-weight:600;cursor:pointer;">Investimentos</button>
           <button id="cf-manage" style="background:none;border:none;font-size:12px;color:var(--ink-soft);font-weight:600;cursor:pointer;">Gerenciar</button>
           <button id="cf-logout" style="background:none;border:none;font-size:12px;color:var(--ink-soft);font-weight:600;cursor:pointer;">Sair</button>
         </div>
@@ -161,6 +162,7 @@ export function render(handlers){
         <div class="cf-balance-sub">
           <span>Entradas <b>${fmtBRL(totalEntradas)}</b></span>
           <span>Saídas <b>${fmtBRL(totalSaidas)}</b></span>
+          <span title="Entradas − saídas do mês, sem considerar o saldo anterior">Resultado <b>${fmtBRL(totalEntradas - totalSaidas)}</b></span>
         </div>
       </div>
     </div>
@@ -192,6 +194,7 @@ export function render(handlers){
     el.onclick = ()=> handlers.onAdjust(el.dataset.adjustDate);
   });
   document.getElementById('cf-manage').onclick = ()=> handlers.onManage();
+  document.getElementById('cf-investments').onclick = ()=> handlers.onInvestments();
   document.getElementById('cf-logout').onclick = ()=> handlers.onLogout();
   root.querySelectorAll('.cf-filter-chip').forEach(chip=>{
     chip.onclick = ()=>{ state.currentFilter = chip.dataset.f; render(handlers); };
