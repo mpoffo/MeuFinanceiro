@@ -221,40 +221,42 @@ function positionsTableHTML(positions, totalAportado, totalSaldo){
       <table class="mv-table iv-table">
         <thead>
           <tr>
-            <th>ID</th><th>Categoria</th><th>Emissor</th><th>Aporte</th><th title="Aporte inicial + aportes − resgates">Aportado</th><th>Taxa</th>
-            <th>Vencimento</th><th>Carência</th><th>IR</th><th>FGC</th><th>Posição em</th>
-            <th>Saldo bruto</th><th>Rend. bruto</th><th>Rent. bruta</th><th>CDI</th><th>% do CDI</th>
+            <th>ID</th><th>Saldo bruto</th><th>Rend. bruto</th><th>% do CDI</th><th>IR</th>
+            <th>Rent. bruta</th><th>CDI</th><th title="Aporte inicial + aportes − resgates">Aportado</th>
+            <th>Categoria</th><th>Emissor</th><th>Aporte</th><th>Taxa</th>
+            <th>Vencimento</th><th>Carência</th><th>FGC</th><th>Posição em</th>
           </tr>
         </thead>
         <tbody>
           ${positions.map(({inv, pos})=>`
             <tr class="mv-row iv-pos-row" data-id="${inv.id}">
               <td class="mv-td-item"><span class="dv-legend-swatch" style="background:${investColor(inv)};"></span> ${escapeHTML(inv.codigo)}</td>
+              <td class="iv-num"><b>${fmtBRL(pos.saldo)}</b></td>
+              <td class="iv-num">${fmtBRL(pos.rend)}</td>
+              <td class="iv-num">${fmtPct(pos.pctCdi, 1)}</td>
+              <td>${escapeHTML(inv.ir) || '—'}</td>
+              <td class="iv-num">${fmtPct(pos.rent)}</td>
+              <td class="iv-num">${fmtPct(pos.cdiRent)}</td>
+              <td class="iv-num">${fmtBRL(pos.aportado)}</td>
               <td>${escapeHTML(categoriaOf(inv.categoria).label)}</td>
               <td>${escapeHTML(inv.emissor)}</td>
               <td>${fmtDateFull(inv.dataAporte)}</td>
-              <td class="iv-num">${fmtBRL(pos.aportado)}</td>
               <td>${escapeHTML(inv.taxa) || '—'}</td>
               <td>${inv.vencimento ? fmtDateFull(inv.vencimento) : 'a confirmar'}</td>
               <td>${escapeHTML(inv.carencia) || '—'}</td>
-              <td>${escapeHTML(inv.ir) || '—'}</td>
               <td>${escapeHTML(inv.fgc) || '—'}</td>
               <td>${fmtDateFull(pos.data)}</td>
-              <td class="iv-num"><b>${fmtBRL(pos.saldo)}</b></td>
-              <td class="iv-num">${fmtBRL(pos.rend)}</td>
-              <td class="iv-num">${fmtPct(pos.rent)}</td>
-              <td class="iv-num">${fmtPct(pos.cdiRent)}</td>
-              <td class="iv-num">${fmtPct(pos.pctCdi, 1)}</td>
             </tr>
           `).join('')}
           <tr class="iv-total-row">
-            <td>Total</td><td></td><td></td><td></td>
-            <td class="iv-num">${fmtBRL(totalAportado)}</td>
-            <td></td><td></td><td></td><td></td><td></td><td></td>
+            <td>Total</td>
             <td class="iv-num"><b>${fmtBRL(totalSaldo)}</b></td>
             <td class="iv-num">${fmtBRL(totalRend)}</td>
-            <td class="iv-num">${fmtPct(totalAportado ? totalRend/totalAportado : 0)}</td>
             <td></td><td></td>
+            <td class="iv-num">${fmtPct(totalAportado ? totalRend/totalAportado : 0)}</td>
+            <td></td>
+            <td class="iv-num">${fmtBRL(totalAportado)}</td>
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
           </tr>
         </tbody>
       </table>
